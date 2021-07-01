@@ -8,14 +8,15 @@ const {
 	NELSON_ID
 } = process.env;
 
-const Client = new Discord.Client();
+let guild, voiceChannel, connection, Nelson, broadcast;
 
-let guild, voiceChannel, connection, Nelson;
+const Client = new Discord.Client();
 
 Client.on("ready", async () => {
 	try {
 		guild = await Client.guilds.fetch(GUILD_ID);
 		voiceChannel = guild.channels.cache.get(VOICE_CHANNEL_ID);
+		broadcast = Client.voice.createBroadcast();
 	} catch (error) {
 		console.log(error);
 		process.exit(1);
@@ -24,6 +25,7 @@ Client.on("ready", async () => {
 });
 
 Client.on("voiceStateUpdate", async (oldState, newState) => {
+	console.log("Help");
 	Nelson = voiceChannel.members.find(GuildMember => GuildMember.id === NELSON_ID);
 	if (Nelson) {
 		try {
@@ -41,13 +43,15 @@ Client.on("voiceStateUpdate", async (oldState, newState) => {
 });
 
 Client.on("guildMemberSpeaking", (member, speaking) => {
+	console.log(speaking);
 	if (member.id === Nelson.id && speaking.bitfield) {
-		(() => {
-			connection.play("donnie.mp3");
+		(play = () => {
+			broadcast.play("donnie.mp3")
+			connection.play(broadcast).on('finish', play);
 		})();
 	} else if (member.id === Nelson.id && speaking.bitfield === 0) {
-		connection.pause(true);
+		broadcast.end();
 	}
-})
+});
 
 Client.login(TOKEN);
